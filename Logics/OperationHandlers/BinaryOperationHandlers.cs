@@ -6,27 +6,30 @@ namespace Text_Caculator_WPF
     {
         public virtual bool leftToRight => true;
         public abstract int Order { get; }
-        public abstract char Symbol { get; }
+        public abstract string Symbol { get; }
         public abstract OperationResult Calculate(double a, double b);
     }
 
+    [ParseInstantly]
     public sealed class AdditionHandler : BaseBinaryOperationHandler
     {
-        public override char Symbol { get; } = '+';
+        public override string Symbol { get; } = "+";
         public override int Order => 0;
         public override OperationResult Calculate(double a, double b) => a + b;
     }
 
+    [ParseInstantly]
     public sealed class MultiplicationHandler : BaseBinaryOperationHandler
     {
-        public override char Symbol { get; } = '*';
+        public override string Symbol { get; } = "*";
         public override int Order => 1;
         public override OperationResult Calculate(double a, double b) => a * b;
     }
 
+    [ParseInstantly]
     public sealed class DivisionHandler : BaseBinaryOperationHandler
     {
-        public override char Symbol { get; } = '/';
+        public override string Symbol { get; } = "/";
         public override int Order => 1;
         public override OperationResult Calculate(double a, double b)
         {
@@ -38,7 +41,7 @@ namespace Text_Caculator_WPF
 
     public sealed class ModuloHandler : BaseBinaryOperationHandler
     {
-        public override char Symbol { get; } = '%';
+        public override string Symbol { get; } = "mod";
         public override int Order => 1;
         public override OperationResult Calculate(double a, double b)
         {
@@ -48,10 +51,11 @@ namespace Text_Caculator_WPF
         }
     }
 
+    [ParseInstantly]
     public sealed class PowerHandler : BaseBinaryOperationHandler
     {
         public override bool leftToRight => false;
-        public override char Symbol { get; } = '^';
+        public override string Symbol { get; } = "^";
         public override int Order => 3;
         public override OperationResult Calculate(double a, double b) => Math.Pow(a, b);
     }

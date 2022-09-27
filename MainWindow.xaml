@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Text_Calculator_WPF"
         mc:Ignorable="d"
-        Title="Text Calculator" Height="450" Width="800">
+        Title="Text Calculator" Height="450" Width="800"
+        Closing="OnWindowClosing">
     <DockPanel>
         <Menu VerticalAlignment="Top" DockPanel.Dock="Top" Panel.ZIndex="99999999">
             <MenuItem Header="_File">
@@ -30,7 +31,7 @@
         </Menu>
         <Grid>
             <RichTextBox x:Name="mainTextBox" TextChanged="RichTextBox_TextChanged" FontFamily="Cambria" Block.LineHeight="6" FontSize="16" SizeChanged="mainTextBox_SizeChanged" ScrollViewer.ScrollChanged="mainTextBox_ScrollChanged"/>
-            <Canvas x:Name="labelCanvas"/>
+            <Canvas x:Name="labelCanvas" IsHitTestVisible="False"/>
         </Grid>
     </DockPanel>
 </Window>

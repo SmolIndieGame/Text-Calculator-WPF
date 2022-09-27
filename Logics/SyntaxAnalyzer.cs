@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -23,10 +24,11 @@ namespace Text_Caculator_WPF
     {
         enum WordType
         {
-            None,
+            /// <summary> Indicate this is the start of the line. </summary>
+            Start,
             Number,
-            VarName,
-            UnaryOp
+            FinishedOp,
+            ConstructingOp
         }
 
         enum ConstructingWordType
@@ -41,6 +43,7 @@ namespace Text_Caculator_WPF
         static Stack<BaseOperation> constructingOperations = new();
         static Stack<BaseOperation> finishedOperations = new();
 
+        static WordType lastWordType;
         public static BaseOperation Analysis(ReadOnlySpan<char> text)
         {
             constructingOperations.Clear();
@@ -53,8 +56,8 @@ namespace Text_Caculator_WPF
             int lastValidDigit = -1;
             int decimalPointDepth = -1;
 
-            WordType lastWord = WordType.None;
             ConstructingWordType constructingWord = ConstructingWordType.None;
+            lastWordType = WordType.Start;
 
             void StartConstructWord(int i, ConstructingWordType constructingWordType)
             {
@@ -81,63 +84,47 @@ namespace Text_Caculator_WPF
                 if (constructingWord == ConstructingWordType.Number)
                 {
                     SyntaxThrower.ThrowIf(lastValidDigit != i - 1, ErrorMessages.UnknownWord, wordStartIndex, i);
-                    
+
                     if (decimalPointDepth > 0)
                         number /= Math.Pow(10, decimalPointDepth);
                     finishedOperations.Push(new LiteralOperation(number) { startChar = wordStartIndex, endChar = i });
-                    lastWord = WordType.Number;
+                    lastWordType = WordType.Number;
+
+                    constructingWord = ConstructingWordType.None;
+                    return;
                 }
 
-                if (constructingWord == ConstructingWordType.Word)
+                if (constructingWord != ConstructingWordType.Word)
+                    return;
+
+                var uOphandler = SymbolConvertor.NameToUnaryHandler(text[wordStartIndex..i]);
+                if (uOphandler is not null)
                 {
-                    var handler = SymbolConvertor.SymbolToUnaryHandler(text[wordStartIndex..i]);
-                    SyntaxThrower.ThrowIfNull(handler, ErrorMessages.UnknownWord, wordStartIndex, i);
-                    SyntaxThrower.ThrowIf(handler.isRightSide && lastWord != WordType.Number && lastWord != WordType.VarName, ErrorMessages.InvalidOperation, wordStartIndex, i);
-
-                    if (!handler.isRightSide && lastWord != WordType.None && lastWord != WordType.UnaryOp)
-                        AddBinaryOperation(layer, handler is NegateHandler ? SymbolConvertor.additionHandler : SymbolConvertor.multiplicationHandler, i);
-
-                    if (!handler.isRightSide)
-                    {
-                        constructingOperations.Push(new UnaryOperation(handler) { startChar = wordStartIndex, layer = layer, order = handler.Order });
-                        lastWord = WordType.UnaryOp;
-                    }
-                    else
-                    {
-                        while (constructingOperations.Count >= 1)
-                        {
-                            var beforeOp = constructingOperations.Peek();
-                            bool orderCondition = beforeOp.order >= handler.Order;
-                            if (beforeOp.layer <= layer && (beforeOp.layer != layer || !orderCondition))
-                                break;
-
-                            var op = constructingOperations.Pop();
-                            SyntaxThrower.ThrowIf(!TryFinishOp(op), ErrorMessages.InvalidOperation, wordStartIndex, i);
-                        }
-                        SyntaxThrower.ThrowIf(!TryFinishOp(new UnaryOperation(handler) { endChar = i, layer = layer, order = handler.Order }), ErrorMessages.InvalidOperation, wordStartIndex, i);
-                        lastWord = WordType.VarName;
-                    }
+                    if (!uOphandler.isRightSide && lastWordType != WordType.Start && lastWordType != WordType.ConstructingOp)
+                        AddBinaryOperation(layer, SymbolConvertor.GetConnectorFor(uOphandler), wordStartIndex, i);
+                    AddUnaryOperation(layer, uOphandler, wordStartIndex, i);
+                    constructingWord = ConstructingWordType.None;
+                    return;
                 }
 
+                var biOphandler = SymbolConvertor.NameToBinaryHandler(text[wordStartIndex..i]);
+                if (biOphandler is not null)
+                {
+                    AddBinaryOperation(layer, biOphandler, wordStartIndex, i);
+                    constructingWord = ConstructingWordType.None;
+                    return;
+                }
+
+                var userVar = SymbolConvertor.NameToConstant(text[wordStartIndex..i]);
+                if (double.IsNaN(userVar))
+                    userVar = SymbolConvertor.NameToUserVariable(text[wordStartIndex..i]);
+                SyntaxThrower.ThrowIf(double.IsNaN(userVar), ErrorMessages.UnknownWord, wordStartIndex, i);
+
+                if (lastWordType != WordType.Start && lastWordType != WordType.ConstructingOp)
+                    AddBinaryOperation(layer, SymbolConvertor.GetMulConnector(), wordStartIndex, i);
+                finishedOperations.Push(new LiteralOperation(userVar) { startChar = wordStartIndex, endChar = i });
+                lastWordType = WordType.FinishedOp;
                 constructingWord = ConstructingWordType.None;
-            }
-
-            static void AddBinaryOperation(int layer, BaseBinaryOperationHandler handler, int indexForError)
-            {
-                SyntaxThrower.ThrowIf(finishedOperations.Count < 1, ErrorMessages.EmptyOperation, indexForError);
-
-                while (constructingOperations.Count >= 1)
-                {
-                    var beforeOp = constructingOperations.Peek();
-                    bool orderCondition = handler.leftToRight ? beforeOp.order >= handler.Order : beforeOp.order > handler.Order;
-                    if (beforeOp.layer <= layer && (beforeOp.layer != layer || !orderCondition))
-                        break;
-
-                    var op = constructingOperations.Pop();
-                    SyntaxThrower.ThrowIf(!TryFinishOp(op), ErrorMessages.InvalidOperation, indexForError);
-                }
-
-                constructingOperations.Push(new BinaryOperation(handler) { layer = layer, order = handler.Order });
             }
 
             for (int i = 0; i < text.Length; i++)
@@ -156,7 +143,7 @@ namespace Text_Caculator_WPF
                         FinishConstructWord(text, i);
                     if (constructingWord == ConstructingWordType.None)
                     {
-                        SyntaxThrower.ThrowIf(lastWord == WordType.Number || lastWord == WordType.VarName, ErrorMessages.MissingBinaryOp, i);
+                        SyntaxThrower.ThrowIf(lastWordType == WordType.Number || lastWordType == WordType.FinishedOp, ErrorMessages.MissingBinaryOp, i);
                         StartConstructWord(i, ConstructingWordType.Number);
                     }
                 }
@@ -169,20 +156,18 @@ namespace Text_Caculator_WPF
                     case '(':
                         if (constructingWord != ConstructingWordType.None)
                             FinishConstructWord(text, i);
-                        if (lastWord == WordType.Number || lastWord == WordType.VarName)
+                        if (lastWordType == WordType.Number || lastWordType == WordType.FinishedOp)
                         {
-                            lastWord = WordType.None;
-                            AddBinaryOperation(layer, SymbolConvertor.multiplicationHandler, i);
+                            AddBinaryOperation(layer, SymbolConvertor.GetMulConnector(), i, i + 1);
+                            layer++;
+                            continue;
                         }
-                        if (lastWord == WordType.UnaryOp)
+
+                        // This execution order fix is for matching with what a human would expect.
+                        if (lastWordType == WordType.ConstructingOp && constructingOperations.Peek() is UnaryOperation oldOp && oldOp.operationHandler.Symbol.Length != 1)
                         {
-                            lastWord = WordType.None;
-                            var oldOp = constructingOperations.Pop() as UnaryOperation;
-                            SyntaxThrower.ThrowIfNull(oldOp, ErrorMessages.Unknown, i);
-                            if (oldOp.operationHandler is NegateHandler)
-                                constructingOperations.Push(oldOp);
-                            else
-                                constructingOperations.Push(new UnaryOperation(oldOp.operationHandler) { layer = oldOp.layer, order = newOrderForBracketedUnaryOp, startChar = oldOp.startChar });
+                            constructingOperations.Pop();
+                            constructingOperations.Push(new UnaryOperation(oldOp.operationHandler) { layer = oldOp.layer, order = newOrderForBracketedUnaryOp, startChar = oldOp.startChar });
                         }
 
                         layer++;
@@ -192,7 +177,7 @@ namespace Text_Caculator_WPF
 
                         if (constructingWord != ConstructingWordType.None)
                             FinishConstructWord(text, i);
-                        SyntaxThrower.ThrowIf(lastWord == WordType.None || lastWord == WordType.UnaryOp, ErrorMessages.InvalidOperation, i);
+                        SyntaxThrower.ThrowIf(lastWordType == WordType.Start || lastWordType == WordType.ConstructingOp, ErrorMessages.InvalidOperation, i);
 
                         layer--;
                         continue;
@@ -210,32 +195,86 @@ namespace Text_Caculator_WPF
                             decimalPointDepth++;
                         continue;
                     default:
-
-                        var handler = SymbolConvertor.SymbolToBinaryHandler(c);
-                        if (handler == null)
+                        var uOphandler = SymbolConvertor.SymbolToUnaryHandler(c);
+                        if (uOphandler is not null)
                         {
-                            if (constructingWord == ConstructingWordType.Number)
+                            if (constructingWord != ConstructingWordType.None)
                                 FinishConstructWord(text, i);
-                            if (constructingWord == ConstructingWordType.None)
-                                StartConstructWord(i, ConstructingWordType.Word);
+                            if (!uOphandler.isRightSide && lastWordType != WordType.Start && lastWordType != WordType.ConstructingOp)
+                                AddBinaryOperation(layer, SymbolConvertor.GetConnectorFor(uOphandler), i, i + 1);
+                            AddUnaryOperation(layer, uOphandler, i, i + 1);
                             continue;
                         }
-                        if (constructingWord != ConstructingWordType.None)
-                            FinishConstructWord(text, i);
 
-                        lastWord = WordType.None;
-                        AddBinaryOperation(layer, handler, i);
+                        var biOphandler = SymbolConvertor.SymbolToBinaryHandler(c);
+                        if (biOphandler is not null)
+                        {
+                            if (constructingWord != ConstructingWordType.None)
+                                FinishConstructWord(text, i);
+                            AddBinaryOperation(layer, biOphandler, i, i + 1);
+                            continue;
+                        }
+
+                        if (constructingWord == ConstructingWordType.Number)
+                            FinishConstructWord(text, i);
+                        if (constructingWord == ConstructingWordType.None)
+                            StartConstructWord(i, ConstructingWordType.Word);
                         continue;
                 }
             }
 
             if (constructingWord != ConstructingWordType.None)
                 FinishConstructWord(text, text.Length);
+            SyntaxThrower.ThrowIf(lastWordType == WordType.ConstructingOp, ErrorMessages.InvalidOperation, wordStartIndex, text.Length);
             while (constructingOperations.TryPop(out var op) && TryFinishOp(op))
                 ;
 
             SyntaxThrower.ThrowIf(finishedOperations.Count != 1, ErrorMessages.InvalidOperation, text.Length - 1);
             return finishedOperations.Pop();
+        }
+
+        private static void AddUnaryOperation(int layer, BaseUnaryOperationHandler handler, int start, int end)
+        {
+            SyntaxThrower.ThrowIf(handler.isRightSide && lastWordType != WordType.Number && lastWordType != WordType.FinishedOp, ErrorMessages.InvalidOperation, start, end);
+
+            if (!handler.isRightSide)
+            {
+                constructingOperations.Push(new UnaryOperation(handler) { startChar = start, layer = layer, order = handler.Order });
+                lastWordType = WordType.ConstructingOp;
+                return;
+            }
+
+            while (constructingOperations.Count >= 1)
+            {
+                var beforeOp = constructingOperations.Peek();
+                bool orderCondition = beforeOp.order >= handler.Order;
+                if (beforeOp.layer <= layer && (beforeOp.layer != layer || !orderCondition))
+                    break;
+
+                var op = constructingOperations.Pop();
+                SyntaxThrower.ThrowIf(!TryFinishOp(op), ErrorMessages.InvalidOperation, start, end);
+            }
+            SyntaxThrower.ThrowIf(!TryFinishOp(new UnaryOperation(handler) { endChar = end, layer = layer, order = handler.Order }), ErrorMessages.InvalidOperation, start, end);
+            lastWordType = WordType.FinishedOp;
+        }
+
+        private static void AddBinaryOperation(int layer, BaseBinaryOperationHandler handler, int start, int end)
+        {
+            SyntaxThrower.ThrowIf(lastWordType != WordType.Number && lastWordType != WordType.FinishedOp, ErrorMessages.InvalidOperation, start, end);
+
+            while (constructingOperations.Count >= 1)
+            {
+                var beforeOp = constructingOperations.Peek();
+                bool orderCondition = handler.leftToRight ? beforeOp.order >= handler.Order : beforeOp.order > handler.Order;
+                if (beforeOp.layer <= layer && (beforeOp.layer != layer || !orderCondition))
+                    break;
+
+                var op = constructingOperations.Pop();
+                SyntaxThrower.ThrowIf(!TryFinishOp(op), ErrorMessages.InvalidOperation, start, end);
+            }
+
+            constructingOperations.Push(new BinaryOperation(handler) { layer = layer, order = handler.Order });
+            lastWordType = WordType.ConstructingOp;
         }
 
         private static bool TryFinishOp(BaseOperation op)
@@ -245,7 +284,7 @@ namespace Text_Caculator_WPF
                 if (!finishedOperations.TryPop(out var subOp2) || !finishedOperations.TryPop(out var subOp1))
                     return false;
 
-                SyntaxThrower.ThrowIf(subOp1.endChar > subOp2.startChar, ErrorMessages.Unknown, subOp2.startChar);
+                SyntaxThrower.ThrowIf(subOp1.endChar > subOp2.startChar, ErrorMessages.InvalidOperation, subOp2.startChar);
 
                 biOp.left = subOp1;
                 biOp.right = subOp2;
@@ -259,12 +298,12 @@ namespace Text_Caculator_WPF
 
                 if (uOp.operationHandler.isRightSide)
                 {
-                    SyntaxThrower.ThrowIf(subOp.endChar > op.endChar, ErrorMessages.Unknown, op.startChar);
+                    SyntaxThrower.ThrowIf(subOp.endChar > op.endChar, ErrorMessages.InvalidOperation, op.startChar);
                     op.startChar = subOp.startChar;
                 }
                 else
                 {
-                    SyntaxThrower.ThrowIf(op.startChar > subOp.startChar, ErrorMessages.Unknown, subOp.startChar);
+                    SyntaxThrower.ThrowIf(op.startChar > subOp.startChar, ErrorMessages.InvalidOperation, subOp.startChar);
                     op.endChar = subOp.endChar;
                 }
                 uOp.inside = subOp;

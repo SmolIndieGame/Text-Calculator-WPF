@@ -10,10 +10,30 @@ namespace Text_Caculator_WPF
         public abstract OperationResult Calculate(double a);
     }
 
+    [ParseInstantly]
     public sealed class NegateHandler : BaseUnaryOperationHandler
     {
         public override string Symbol { get; } = "-";
         public override OperationResult Calculate(double a) => -a;
+    }
+
+    [ParseInstantly]
+    public sealed class PercentHandler : BaseUnaryOperationHandler
+    {
+        public override bool isRightSide => true;
+        public override int Order => 1;
+        public override string Symbol { get; } = "%";
+        public override OperationResult Calculate(double a) => a * 0.01;
+    }
+
+    public sealed class DegreeHandler : BaseUnaryOperationHandler
+    {
+        public const double degreeToRad = Math.PI / 180;
+
+        public override bool isRightSide => true;
+        public override int Order => 1;
+        public override string Symbol { get; } = "degree";
+        public override OperationResult Calculate(double a) => a * degreeToRad;
     }
 
     public sealed class SineHandler : BaseUnaryOperationHandler
@@ -23,6 +43,7 @@ namespace Text_Caculator_WPF
         public override OperationResult Calculate(double a) => Math.Sin(a);
     }
 
+    [ParseInstantly]
     public sealed class FactorialHandler : BaseUnaryOperationHandler
     {
         public override bool isRightSide => true;

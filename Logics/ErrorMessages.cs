@@ -15,6 +15,9 @@
         public static readonly string NotAInteger = "Not A Integer";
         public static readonly string ResultTooLarge = "Result Too Large";
 
+        public static readonly string InvalidIdentifier = "Invalid Identifier";
+        public static readonly string IdentifierPreserved = "Identifier Preserved";
+
         public static readonly string Unknown = "Unknown Error";
     }
 }
