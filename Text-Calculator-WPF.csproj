@@ -6,6 +6,7 @@
     <RootNamespace>Text_Calculator_WPF</RootNamespace>
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
+	<ApplicationIcon>app icon.ico</ApplicationIcon>
   </PropertyGroup>
 
 </Project>
