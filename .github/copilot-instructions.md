@@ -2,46 +2,50 @@
 
 ## Repository Overview
 
-Text-Calculator-WPF is a C# WPF desktop application targeting **.NET 6 (Windows)**. It provides a rich-text editor where users type mathematical expressions line by line and see results evaluated in real time. Files are saved/loaded in a custom `.txtc` format.
+Text-Calculator-WPF is a C# WPF desktop application targeting **.NET 10 (Windows)**. It provides a rich-text editor where users type mathematical expressions line by line and see results evaluated in real time. Files are saved/loaded in a custom `.txtc` format.
 
 ## Technology Stack
 
 - **Language**: C# with nullable reference types enabled
 - **UI Framework**: WPF (`UseWPF` is set in the project)
-- **Target Framework**: `net6.0-windows`
-- **Build**: `dotnet build` from the solution root
+- **Target Framework**: `net10.0-windows`
+- **Build**: `dotnet build` from the repository root (uses `Text-Calculator-WPF.sln`)
 
 There are no automated tests in this repository. Validate changes by building the project.
 
 ## Project Structure
 
 ```
-Text-Calculator-WPF/
-├── App.xaml / App.xaml.cs          # Application entry point
-├── MainWindow.xaml / .cs           # Main UI window and real-time evaluation loop
-├── CommandHandling.cs              # File commands (New, Open, Save, SaveAs, Close)
-├── AssemblyInfo.cs
-└── Logics/
-    ├── Evaluator.cs                # Top-level evaluation entry point (returns EvaluateResult)
-    ├── SyntaxAnalyzer.cs           # Parses text into an operation tree (BaseOperation)
-    ├── SyntaxThrower.cs            # Helpers to throw SyntaxException with position info
-    ├── SymbolConvertor.cs          # Registry of all operators, constants, and user variables
-    ├── ErrorMessages.cs            # Centralised error message strings
-    ├── Operations/
-    │   ├── BaseOperation.cs        # Abstract base; carries startChar/endChar/layer/order
-    │   ├── BinaryOperation.cs      # Two-operand operation (left, right children)
-    │   ├── UnaryOperation.cs       # Single-operand operation (inside child)
-    │   └── LiteralOperation.cs     # Leaf node holding a numeric value
-    └── OperationHandlers/
-        ├── BinaryOperationHandlers.cs  # +, *, /, ^, mod
-        ├── UnaryOperationHandlers.cs   # -, %, !, sin, cos, tan, log, ln, sqrt, cbrt, degree
-        ├── OperationResult.cs          # Result type returned by Calculate()
-        └── ParseInstantlyAttribute.cs  # Marks single-character operators for fast lookup
+Text-Calculator-WPF/                    # Repository root
+├── Text-Calculator-WPF.sln            # Solution file
+└── src/
+    └── Text-Calculator-WPF/           # Main project folder
+        ├── App.xaml / App.xaml.cs     # Application entry point
+        ├── MainWindow.xaml / .cs      # Main UI window and real-time evaluation loop
+        ├── CommandHandling.cs         # File commands (New, Open, Save, SaveAs, Close)
+        ├── AssemblyInfo.cs
+        ├── Text-Calculator-WPF.csproj
+        └── Logics/
+            ├── Evaluator.cs                # Top-level evaluation entry point (returns EvaluateResult)
+            ├── SyntaxAnalyzer.cs           # Parses text into an operation tree (BaseOperation)
+            ├── SyntaxThrower.cs            # Helpers to throw SyntaxException with position info
+            ├── SymbolConvertor.cs          # Registry of all operators, constants, and user variables
+            ├── ErrorMessages.cs            # Centralised error message strings
+            ├── Operations/
+            │   ├── BaseOperation.cs        # Abstract base; carries startChar/endChar/layer/order
+            │   ├── BinaryOperation.cs      # Two-operand operation (left, right children)
+            │   ├── UnaryOperation.cs       # Single-operand operation (inside child)
+            │   └── LiteralOperation.cs     # Leaf node holding a numeric value
+            └── OperationHandlers/
+                ├── BinaryOperationHandlers.cs  # +, *, /, ^, mod
+                ├── UnaryOperationHandlers.cs   # -, %, !, sin, cos, tan, log, ln, sqrt, cbrt, degree
+                ├── OperationResult.cs          # Result type returned by Calculate()
+                └── ParseInstantlyAttribute.cs  # Marks single-character operators for fast lookup
 ```
 
 ## Architecture: Adding a New Operation
 
-1. **Create a handler class** in `Logics/OperationHandlers/BinaryOperationHandlers.cs` (binary) or `UnaryOperationHandlers.cs` (unary) by subclassing `BaseBinaryOperationHandler` or `BaseUnaryOperationHandler`.
+1. **Create a handler class** in `src/Text-Calculator-WPF/Logics/OperationHandlers/BinaryOperationHandlers.cs` (binary) or `UnaryOperationHandlers.cs` (unary) by subclassing `BaseBinaryOperationHandler` or `BaseUnaryOperationHandler`.
    - Override `Symbol` (the text/character used in expressions).
    - Override `Order` (operator precedence; lower = evaluated first / lower binding).
    - Override `Calculate(...)` to return an `OperationResult` (implicit from `double`, or an error string from `ErrorMessages`).
