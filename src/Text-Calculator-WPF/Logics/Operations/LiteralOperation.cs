@@ -1,14 +1,8 @@
-﻿namespace Text_Caculator_WPF
+﻿namespace Text_Calculator_WPF;
+
+internal sealed class LiteralOperation(double literalValue) : BaseOperation
 {
-    internal sealed class LiteralOperation : BaseOperation
-    {
-        public LiteralOperation(double literalValue)
-        {
-            this.literalValue = literalValue;
-        }
+    public double LiteralValue { get; } = literalValue;
 
-        public double literalValue { get; }
-
-        public override EvaluateResult Evaluate() => literalValue;
-    }
+    public override EvaluateResult Evaluate() => LiteralValue;
 }

@@ -1,31 +1,25 @@
-﻿namespace Text_Caculator_WPF
+﻿namespace Text_Calculator_WPF;
+
+internal sealed class BinaryOperation(BaseBinaryOperationHandler operationHandler) : BaseOperation
 {
-    internal sealed class BinaryOperation : BaseOperation
+    public BaseBinaryOperationHandler OperationHandler { get; } = operationHandler;
+    public BaseOperation? Left { get; set; }
+    public BaseOperation? Right { get; set; }
+
+    public override EvaluateResult Evaluate()
     {
-        public BinaryOperation(BaseBinaryOperationHandler operationHandler)
-        {
-            this.operationHandler = operationHandler;
-        }
+        if (Left == null || Right == null)
+            return new EvaluateResult(ErrorMessages.InvalidOperation, StartChar, EndChar);
 
-        public BaseBinaryOperationHandler operationHandler { get; }
-        public BaseOperation? left { get; set; }
-        public BaseOperation? right { get; set; }
+        var leftEvalResult = Left.Evaluate();
+        if (!leftEvalResult.IsSuccessful) return leftEvalResult;
 
-        public override EvaluateResult Evaluate()
-        {
-            if (left == null || right == null)
-                return new EvaluateResult(ErrorMessages.InvalidOperation, startChar, endChar);
+        var rightEvalResult = Right.Evaluate();
+        if (!rightEvalResult.IsSuccessful) return rightEvalResult;
 
-            var leftEvalResult = left.Evaluate();
-            if (!leftEvalResult.isSuccessful) return leftEvalResult;
-
-            var rightEvalResult = right.Evaluate();
-            if (!rightEvalResult.isSuccessful) return rightEvalResult;
-
-            var result = operationHandler.Calculate(leftEvalResult.value, rightEvalResult.value);
-            if (!result.isSuccessful) return new EvaluateResult(result.errorMessage, startChar, endChar);
-            if (double.IsInfinity(result.value)) return new EvaluateResult(ErrorMessages.ResultTooLarge, startChar, endChar);
-            return result.value;
-        }
+        var result = OperationHandler.Calculate(leftEvalResult.Value, rightEvalResult.Value);
+        if (!result.IsSuccessful) return new EvaluateResult(result.ErrorMessage, StartChar, EndChar);
+        if (double.IsInfinity(result.Value)) return new EvaluateResult(ErrorMessages.ResultTooLarge, StartChar, EndChar);
+        return result.Value;
     }
 }

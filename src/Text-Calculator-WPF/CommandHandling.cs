@@ -2,7 +2,6 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Reflection.Emit;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -17,37 +16,37 @@ namespace Text_Calculator_WPF
         public static event Action<bool>? onDirtyChanged;
 
         public static RichTextBox? TextBox;
-        static string currentPath;
-        static bool dirty;
+        static string _currentPath;
+        static bool _dirty;
 
         static CommandHandling()
         {
-            currentPath = string.Empty;
-            dirty = false;
+            _currentPath = string.Empty;
+            _dirty = false;
         }
 
-        static bool isDirty
+        static bool IsDirty
         {
             set
             {
-                dirty = value;
-                onDirtyChanged?.Invoke(dirty);
+                _dirty = value;
+                onDirtyChanged?.Invoke(_dirty);
             }
         }
-        public static void SetDirty() => isDirty = true;
+        public static void SetDirty() => IsDirty = true;
 
         public static string GetFileName()
         {
-            if (string.IsNullOrEmpty(currentPath))
+            if (string.IsNullOrEmpty(_currentPath))
                 return string.Empty;
 
-            return currentPath;
+            return _currentPath;
         }
 
         /// <returns>False if user selected cancel.</returns>
         public static bool NotifySaveChanges()
         {
-            if (!dirty) return true;
+            if (!_dirty) return true;
 
             string messageBoxText = "Do you want to save changes?";
             string caption = "Text Calculator";
@@ -75,8 +74,8 @@ namespace Text_Calculator_WPF
 
             TextBox.Document.Blocks.Clear();
             onClearDoc?.Invoke();
-            currentPath = string.Empty;
-            isDirty = false;
+            _currentPath = string.Empty;
+            IsDirty = false;
         }
         public static void CanNew(object sender, CanExecuteRoutedEventArgs e) => e.CanExecute = true;
 
@@ -99,8 +98,8 @@ namespace Text_Calculator_WPF
                 TextBox.Document.Blocks.Clear();
                 onClearDoc?.Invoke();
                 TextBox.AppendText(textData);
-                currentPath = fileDialog.FileName;
-                isDirty = false;
+                _currentPath = fileDialog.FileName;
+                IsDirty = false;
             }
             catch (Exception ex)
             {
@@ -123,14 +122,14 @@ namespace Text_Calculator_WPF
         {
             if (!NotifySaveChanges()) return;
 
-            isDirty = false;
+            IsDirty = false;
             Application.Current.Shutdown();
         }
         public static void CanClose(object sender, CanExecuteRoutedEventArgs e) => e.CanExecute = true;
 
         static bool GuardSave()
         {
-            if (string.IsNullOrEmpty(currentPath))
+            if (string.IsNullOrEmpty(_currentPath))
                 return SaveAs();
             return Save();
         }
@@ -145,7 +144,7 @@ namespace Text_Calculator_WPF
             if (!result.HasValue || !result.Value)
                 return false;
 
-            currentPath = fileDialog.FileName;
+            _currentPath = fileDialog.FileName;
             return Save();
         }
 
@@ -156,8 +155,8 @@ namespace Text_Calculator_WPF
             try
             {
                 var lines = TextBox.Document.Blocks.Select(x => new TextRange(x.ContentStart, x.ContentEnd).Text);
-                File.WriteAllLines(currentPath, lines, Encoding.Unicode);
-                isDirty = false;
+                File.WriteAllLines(_currentPath, lines, Encoding.Unicode);
+                IsDirty = false;
                 return true;
             }
             catch (Exception ex)

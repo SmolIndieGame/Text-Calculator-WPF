@@ -1,23 +1,22 @@
-﻿namespace Text_Caculator_WPF
+﻿namespace Text_Calculator_WPF;
+
+internal static class ErrorMessages
 {
-    internal static class ErrorMessages
-    {
-        public static readonly string TooManyBackets = "Extra Closing Bracket";
-        public static readonly string TooManyDecimalPoint = "Extra Decimal Point";
+    public const string TooManyBackets = "Extra Closing Bracket";
+    public const string TooManyDecimalPoint = "Extra Decimal Point";
 
-        public static readonly string InvalidLiteral = "Invalid Number";
-        public static readonly string EmptyOperation = "Empty Operation";
-        public static readonly string InvalidOperation = "Invalid Operation";
-        public static readonly string UnknownWord = "Unknown Word";
-        public static readonly string MissingBinaryOp = "Missing a Binary Operator";
+    public const string InvalidLiteral = "Invalid Number";
+    public const string EmptyOperation = "Empty Operation";
+    public const string InvalidOperation = "Invalid Operation";
+    public const string UnknownWord = "Unknown Word";
+    public const string MissingBinaryOp = "Missing a Binary Operator";
 
-        public static readonly string DividedByZero = "Divided By Zero";
-        public static readonly string NotAInteger = "Not A Integer";
-        public static readonly string ResultTooLarge = "Result Too Large";
+    public const string DividedByZero = "Divided By Zero";
+    public const string NotAInteger = "Not A Integer";
+    public const string ResultTooLarge = "Result Too Large";
 
-        public static readonly string InvalidIdentifier = "Invalid Identifier";
-        public static readonly string IdentifierPreserved = "Identifier Preserved";
+    public const string InvalidIdentifier = "Invalid Identifier";
+    public const string IdentifierPreserved = "Identifier Preserved";
 
-        public static readonly string Unknown = "Unknown Error";
-    }
+    public const string Unknown = "Unknown Error";
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -8,7 +7,6 @@ using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using Text_Caculator_WPF;
 
 namespace Text_Calculator_WPF
 {
@@ -24,21 +22,21 @@ namespace Text_Calculator_WPF
     {
         const int evaluationDelay = 333;
 
-        bool isChangingTextByCode;
+        bool _isChangingTextByCode;
 
-        private List<Label> labels;
-        private List<string> prevLines;
-        CancellationTokenSource cancelEvaluationSource;
+        private List<Label> _labels;
+        private List<string> _prevLines;
+        CancellationTokenSource _cancelEvaluationSource;
 
-        string defaultTitle;
+        string _defaultTitle;
 
         public MainWindow()
         {
             InitializeComponent();
 
-            labels = new();
-            prevLines = new();
-            cancelEvaluationSource = new CancellationTokenSource();
+            _labels = new();
+            _prevLines = new();
+            _cancelEvaluationSource = new CancellationTokenSource();
 
             DataObject.AddPastingHandler(mainTextBox, PlainTextPasting);
 
@@ -48,19 +46,19 @@ namespace Text_Calculator_WPF
             CommandBindings.Add(new(ApplicationCommands.Save, CommandHandling.Save, CommandHandling.CanSave));
             CommandBindings.Add(new(ApplicationCommands.SaveAs, CommandHandling.SaveAs, CommandHandling.CanSaveAs));
             CommandBindings.Add(new(ApplicationCommands.Close, CommandHandling.Close, CommandHandling.CanClose));
-            defaultTitle = Title;
+            _defaultTitle = Title;
             CommandHandling.onClearDoc += CommandHandling_onClearDoc;
             CommandHandling.onDirtyChanged += CommandHandling_onDirtyChanged;
         }
 
         private void CommandHandling_onClearDoc()
         {
-            prevLines.Clear();
+            _prevLines.Clear();
 
-            cancelEvaluationSource.Cancel();
-            if (!cancelEvaluationSource.TryReset())
-                cancelEvaluationSource = new CancellationTokenSource();
-            DelayEvaluateDocument(cancelEvaluationSource.Token);
+            _cancelEvaluationSource.Cancel();
+            if (!_cancelEvaluationSource.TryReset())
+                _cancelEvaluationSource = new CancellationTokenSource();
+            DelayEvaluateDocument(_cancelEvaluationSource.Token);
         }
 
         private void CommandHandling_onDirtyChanged(bool newDirty)
@@ -68,23 +66,23 @@ namespace Text_Calculator_WPF
             string path = CommandHandling.GetFileName();
             if (string.IsNullOrEmpty(path))
             {
-                Title = $"{defaultTitle}{(newDirty ? "*" : "")}";
+                Title = $"{_defaultTitle}{(newDirty ? "*" : "")}";
                 return;
             }
 
-            Title = $"{defaultTitle}{(newDirty ? "*" : "")} - {path}";
+            Title = $"{_defaultTitle}{(newDirty ? "*" : "")} - {path}";
         }
 
         private void RichTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (isChangingTextByCode) return;
+            if (_isChangingTextByCode) return;
             CommandHandling.SetDirty();
             RepaintLabels();
 
-            cancelEvaluationSource.Cancel();
-            if (!cancelEvaluationSource.TryReset())
-                cancelEvaluationSource = new CancellationTokenSource();
-            DelayEvaluateDocument(cancelEvaluationSource.Token);
+            _cancelEvaluationSource.Cancel();
+            if (!_cancelEvaluationSource.TryReset())
+                _cancelEvaluationSource = new CancellationTokenSource();
+            DelayEvaluateDocument(_cancelEvaluationSource.Token);
         }
 
         private async void DelayEvaluateDocument(CancellationToken cancellationToken)
@@ -98,13 +96,13 @@ namespace Text_Calculator_WPF
                 return;
             }
 
-            isChangingTextByCode = true;
+            _isChangingTextByCode = true;
 
             mainTextBox.BeginChange();
             EvaluteDocument();
             mainTextBox.EndChange();
 
-            isChangingTextByCode = false;
+            _isChangingTextByCode = false;
         }
 
         private void EvaluteDocument()
@@ -123,19 +121,19 @@ namespace Text_Calculator_WPF
                 TextRange paraTextRange = new TextRange(start, end);
                 string line = paraTextRange.Text;
 
-                if (!reEvalute && i < prevLines.Count && prevLines[i] == line)
+                if (!reEvalute && i < _prevLines.Count && _prevLines[i] == line)
                     continue;
 
                 paraTextRange.ClearAllProperties();
-                SymbolConvertor.SetLineNumber(i);
-                SymbolConvertor.SetUserVariable(string.Empty, default);
+                SymbolConverter.SetLineNumber(i);
+                SymbolConverter.SetUserVariable(string.Empty, default);
 
-                if (i == prevLines.Count)
-                    prevLines.Add(line);
+                if (i == _prevLines.Count)
+                    _prevLines.Add(line);
                 else
-                    prevLines[i] = line;
+                    _prevLines[i] = line;
 
-                Label label = i >= labels.Count ? CreateNewLabel(para.ContentEnd) : labels[i];
+                Label label = i >= _labels.Count ? CreateNewLabel(para.ContentEnd) : _labels[i];
                 if (string.IsNullOrWhiteSpace(line))
                 {
                     label.Visibility = Visibility.Hidden;
@@ -176,7 +174,7 @@ namespace Text_Calculator_WPF
                     if (varNameValid)
                     {
                         var varname = line[varNameStart..varNameEnd];
-                        if (SymbolConvertor.IsIdentifierPreserved(varname))
+                        if (SymbolConverter.IsIdentifierPreserved(varname))
                         {
                             displayError = ErrorMessages.IdentifierPreserved;
                             varNameValid = false;
@@ -185,8 +183,8 @@ namespace Text_Calculator_WPF
                         {
                             var result = EvaluateAndDisplayResultToLabel(label, start.GetPositionAtOffset(varNameEnd + 1), end);
                             
-                            if (result.isSuccessful)
-                                SymbolConvertor.SetUserVariable(varname, result.value);
+                            if (result.IsSuccessful)
+                                SymbolConverter.SetUserVariable(varname, result.Value);
                         }
                     }
 
@@ -206,10 +204,10 @@ namespace Text_Calculator_WPF
                 EvaluateAndDisplayResultToLabel(label, start, end);
             }
 
-            for (int i = list.Count; i < labels.Count || i < prevLines.Count; i++)
+            for (int i = list.Count; i < _labels.Count || i < _prevLines.Count; i++)
             {
-                labels[i].Visibility = Visibility.Hidden;
-                prevLines[i] = string.Empty;
+                _labels[i].Visibility = Visibility.Hidden;
+                _prevLines[i] = string.Empty;
             }
         }
 
@@ -222,14 +220,14 @@ namespace Text_Calculator_WPF
             try
             {
                 result = Evaluator.Evaluate(textRange.Text);
-                if (result.isSuccessful)
-                    text = $"= {result.value:G15}";
+                if (result.IsSuccessful)
+                    text = $"= {result.Value:G15}";
                 else
                 {
-                    TextPointer errorStart = start.GetPositionAtOffset(result.errorStartIndex + 1);
-                    TextPointer errorEnd = start.GetPositionAtOffset(result.errorEndIndex + 1);
+                    TextPointer errorStart = start.GetPositionAtOffset(result.ErrorStartIndex + 1);
+                    TextPointer errorEnd = start.GetPositionAtOffset(result.ErrorEndIndex + 1);
                     new TextRange(errorStart, errorEnd).ApplyPropertyValue(TextElement.ForegroundProperty, Brushes.Red);
-                    text = result.errorMessage;
+                    text = result.ErrorMessage;
                 }
             }
             catch (Exception ex)
@@ -249,7 +247,7 @@ namespace Text_Calculator_WPF
             label.Foreground = Brushes.CadetBlue;
             label.FontFamily = new FontFamily("Cambria");
             label.FontSize = 14;
-            labels.Add(label);
+            _labels.Add(label);
             labelCanvas.Children.Add(label);
             SetLabelPosition(label, pointer);
             return label;
@@ -278,9 +276,9 @@ namespace Text_Calculator_WPF
         private void RepaintLabels()
         {
             System.Collections.IList list = mainTextBox.Document.Blocks;
-            for (int i = 0; i < list.Count && i < labels.Count; i++)
+            for (int i = 0; i < list.Count && i < _labels.Count; i++)
                 if (list[i] is Paragraph para)
-                    SetLabelPosition(labels[i], para.ContentEnd);
+                    SetLabelPosition(_labels[i], para.ContentEnd);
         }
 
         private void OnWindowClosing(object sender, System.ComponentModel.CancelEventArgs e)

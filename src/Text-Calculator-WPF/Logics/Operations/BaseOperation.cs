@@ -1,13 +1,12 @@
-﻿namespace Text_Caculator_WPF
+﻿namespace Text_Calculator_WPF;
+
+internal abstract class BaseOperation
 {
-    internal abstract class BaseOperation
-    {
-        public int startChar { get; set; } = -1;
-        public int endChar { get; set; } = -1;
+    public int StartChar { get; set; } = -1;
+    public int EndChar { get; set; } = -1;
 
-        public int layer { get; init; } = -1;
-        public int order { get; init; } = -1;
+    public int Layer { get; init; } = -1;
+    public int Order { get; init; } = -1;
 
-        public abstract EvaluateResult Evaluate();
-    }
+    public abstract EvaluateResult Evaluate();
 }

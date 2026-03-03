@@ -1,26 +1,25 @@
-﻿namespace Text_Caculator_WPF
+﻿namespace Text_Calculator_WPF;
+
+public readonly struct OperationResult
 {
-    public readonly struct OperationResult
+    public readonly bool IsSuccessful;
+    public readonly double Value;
+    public readonly string ErrorMessage;
+
+    public OperationResult(double value)
     {
-        public readonly bool isSuccessful;
-        public readonly double value;
-        public readonly string errorMessage;
-
-        public OperationResult(double value)
-        {
-            this.value = value;
-            isSuccessful = true;
-            errorMessage = string.Empty;
-        }
-
-        public OperationResult(string errorMessage)
-        {
-            this.errorMessage = errorMessage;
-            isSuccessful = false;
-            value = 0;
-        }
-
-        public static implicit operator OperationResult(double value) => new(value);
-        public static implicit operator OperationResult(string errorMessage) => new(errorMessage);
+        Value = value;
+        IsSuccessful = true;
+        ErrorMessage = string.Empty;
     }
+
+    public OperationResult(string errorMessage)
+    {
+        ErrorMessage = errorMessage;
+        IsSuccessful = false;
+        Value = 0;
+    }
+
+    public static implicit operator OperationResult(double value) => new(value);
+    public static implicit operator OperationResult(string errorMessage) => new(errorMessage);
 }
