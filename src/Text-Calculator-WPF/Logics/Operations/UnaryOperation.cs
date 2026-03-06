@@ -1,26 +1,20 @@
-﻿namespace Text_Caculator_WPF
+﻿namespace Text_Calculator_WPF;
+
+internal sealed class UnaryOperation(BaseUnaryOperationHandler operationHandler) : BaseOperation
 {
-    internal sealed class UnaryOperation : BaseOperation
+    public BaseUnaryOperationHandler OperationHandler { get; } = operationHandler;
+    public BaseOperation? Inside { get; set; }
+
+    public override EvaluateResult Evaluate()
     {
-        public UnaryOperation(BaseUnaryOperationHandler operationHandler)
-        {
-            this.operationHandler = operationHandler;
-        }
+        if (Inside == null)
+            return new EvaluateResult(ErrorMessages.InvalidOperation, StartChar, EndChar);
 
-        public BaseUnaryOperationHandler operationHandler { get; }
-        public BaseOperation? inside { get; set; }
-
-        public override EvaluateResult Evaluate()
-        {
-            if (inside == null)
-                return new EvaluateResult(ErrorMessages.InvalidOperation, startChar, endChar);
-
-            var evalResult = inside.Evaluate();
-            if (!evalResult.isSuccessful) return evalResult;
-            var result = operationHandler.Calculate(evalResult.value);
-            if (!result.isSuccessful) return new EvaluateResult(result.errorMessage, startChar, endChar);
-            if (double.IsInfinity(result.value)) return new EvaluateResult(ErrorMessages.ResultTooLarge, startChar, endChar);
-            return result.value;
-        }
+        var evalResult = Inside.Evaluate();
+        if (!evalResult.IsSuccessful) return evalResult;
+        var result = OperationHandler.Calculate(evalResult.Value);
+        if (!result.IsSuccessful) return new EvaluateResult(result.ErrorMessage, StartChar, EndChar);
+        if (double.IsInfinity(result.Value)) return new EvaluateResult(ErrorMessages.ResultTooLarge, StartChar, EndChar);
+        return result.Value;
     }
 }
