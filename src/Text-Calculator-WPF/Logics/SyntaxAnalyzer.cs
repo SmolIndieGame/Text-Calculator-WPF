@@ -165,7 +165,7 @@ internal static class SyntaxAnalyzer
                     layer++;
                     continue;
                 case ')':
-                    SyntaxThrower.ThrowIf(layer == 0, ErrorMessages.TooManyBackets, i);
+                    SyntaxThrower.ThrowIf(layer == 0, ErrorMessages.TooManyBrackets, i);
 
                     if (constructingWord != ConstructingWordType.None)
                         FinishConstructWord(text, i);

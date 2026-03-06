@@ -12,8 +12,8 @@ namespace Text_Calculator_WPF
 {
     public static class CommandHandling
     {
-        public static event Action? onClearDoc;
-        public static event Action<bool>? onDirtyChanged;
+        public static event Action? OnClearDoc;
+        public static event Action<bool>? OnDirtyChanged;
 
         public static RichTextBox? TextBox;
         static string _currentPath;
@@ -30,7 +30,7 @@ namespace Text_Calculator_WPF
             set
             {
                 _dirty = value;
-                onDirtyChanged?.Invoke(_dirty);
+                OnDirtyChanged?.Invoke(_dirty);
             }
         }
         public static void SetDirty() => IsDirty = true;
@@ -73,7 +73,7 @@ namespace Text_Calculator_WPF
             if (!NotifySaveChanges()) return;
 
             TextBox.Document.Blocks.Clear();
-            onClearDoc?.Invoke();
+            OnClearDoc?.Invoke();
             _currentPath = string.Empty;
             IsDirty = false;
         }
@@ -96,7 +96,7 @@ namespace Text_Calculator_WPF
             {
                 string textData = File.ReadAllText(fileDialog.FileName, Encoding.Unicode);
                 TextBox.Document.Blocks.Clear();
-                onClearDoc?.Invoke();
+                OnClearDoc?.Invoke();
                 TextBox.AppendText(textData);
                 _currentPath = fileDialog.FileName;
                 IsDirty = false;

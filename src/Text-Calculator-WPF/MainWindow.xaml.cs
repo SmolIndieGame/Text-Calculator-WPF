@@ -47,11 +47,11 @@ namespace Text_Calculator_WPF
             CommandBindings.Add(new(ApplicationCommands.SaveAs, CommandHandling.SaveAs, CommandHandling.CanSaveAs));
             CommandBindings.Add(new(ApplicationCommands.Close, CommandHandling.Close, CommandHandling.CanClose));
             _defaultTitle = Title;
-            CommandHandling.onClearDoc += CommandHandling_onClearDoc;
-            CommandHandling.onDirtyChanged += CommandHandling_onDirtyChanged;
+            CommandHandling.OnClearDoc += CommandHandling_OnClearDoc;
+            CommandHandling.OnDirtyChanged += CommandHandling_OnDirtyChanged;
         }
 
-        private void CommandHandling_onClearDoc()
+        private void CommandHandling_OnClearDoc()
         {
             _prevLines.Clear();
 
@@ -61,7 +61,7 @@ namespace Text_Calculator_WPF
             DelayEvaluateDocument(_cancelEvaluationSource.Token);
         }
 
-        private void CommandHandling_onDirtyChanged(bool newDirty)
+        private void CommandHandling_OnDirtyChanged(bool newDirty)
         {
             string path = CommandHandling.GetFileName();
             if (string.IsNullOrEmpty(path))

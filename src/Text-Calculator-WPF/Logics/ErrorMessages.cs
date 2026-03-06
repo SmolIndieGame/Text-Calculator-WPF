@@ -2,7 +2,7 @@
 
 internal static class ErrorMessages
 {
-    public const string TooManyBackets = "Extra Closing Bracket";
+    public const string TooManyBrackets = "Extra Closing Bracket";
     public const string TooManyDecimalPoint = "Extra Decimal Point";
 
     public const string InvalidLiteral = "Invalid Number";
@@ -12,7 +12,7 @@ internal static class ErrorMessages
     public const string MissingBinaryOp = "Missing a Binary Operator";
 
     public const string DividedByZero = "Divided By Zero";
-    public const string NotAInteger = "Not A Integer";
+    public const string NotAnInteger = "Not An Integer";
     public const string ResultTooLarge = "Result Too Large";
 
     public const string InvalidIdentifier = "Invalid Identifier";

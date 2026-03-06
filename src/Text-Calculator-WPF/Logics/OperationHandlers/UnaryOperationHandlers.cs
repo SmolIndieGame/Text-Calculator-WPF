@@ -95,7 +95,7 @@ public sealed class FactorialHandler : BaseUnaryOperationHandler
     public override OperationResult Calculate(double a)
     {
         if (Math.Floor(a) != a)
-            return ErrorMessages.NotAInteger;
+            return ErrorMessages.NotAnInteger;
         if (a >= 171)
             return ErrorMessages.ResultTooLarge;
 
