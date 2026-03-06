@@ -99,13 +99,13 @@ namespace Text_Calculator_WPF
             _isChangingTextByCode = true;
 
             mainTextBox.BeginChange();
-            EvaluteDocument();
+            EvaluateDocument();
             mainTextBox.EndChange();
 
             _isChangingTextByCode = false;
         }
 
-        private void EvaluteDocument()
+        private void EvaluateDocument()
         {
             bool reEvalute = false;
 
